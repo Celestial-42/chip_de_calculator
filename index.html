@@ -74,6 +74,19 @@
             </div>
         </div>
 
+        <!-- 导出/导入 -->
+        <div class="section export-section">
+            <h2>数据导出 / 导入</h2>
+            <div class="export-row">
+                <button onclick="exportJSON()">📥 导出 JSON</button>
+                <button onclick="exportText()">📄 导出文本报告</button>
+                <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📂 导入 JSON</button>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+                <button class="btn-secondary" onclick="copyToClipboard()">📋 复制到剪贴板</button>
+            </div>
+            <div id="exportMsg" class="export-msg"></div>
+        </div>
+
         <div class="section">
             <h2>混合进制计算器</h2>
             <p class="section-desc">

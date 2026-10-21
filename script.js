@@ -207,6 +207,7 @@ function addField() {
     item.innerHTML = `
         <div class="field-item-header">
             <span class="field-tag">#${id + 1}</span>
+            <input type="text" class="field-name-input" placeholder="域段名称" data-field-id="${id}">
             <input type="text" placeholder="高位:低位，如 20:16" oninput="onFieldInput(${id})" onkeydown="if(event.key==='Enter')onFieldInput(${id})">
             <button class="btn-reset" onclick="resetField(${id})" title="重置移位">↺ 重置</button>
             <button class="btn-delete" onclick="removeField(${id})">删除</button>
@@ -254,7 +255,7 @@ function resetField(id) {
 function onFieldInput(id) {
     const item = document.getElementById(`field-${id}`);
     if (!item) return;
-    const input = item.querySelector('input[type="text"]');
+    const input = item.querySelector('input[type="text"]:not(.field-name-input)');
     const rangeStr = input.value.trim();
     const match = rangeStr.match(/^(\d+)\s*:\s*(\d+)$/);
     if (!match) {
@@ -294,7 +295,7 @@ function clearFieldShiftResult(id) {
 function getFieldWidth(id) {
     const item = document.getElementById(`field-${id}`);
     if (!item) return 0;
-    const input = item.querySelector('input[type="text"]');
+    const input = item.querySelector('input[type="text"]:not(.field-name-input)');
     const match = input.value.trim().match(/^(\d+)\s*:\s*(\d+)$/);
     if (!match) return 0;
     const high = parseInt(match[1]);
@@ -306,7 +307,7 @@ function getFieldWidth(id) {
 function getFieldVal(id) {
     const item = document.getElementById(`field-${id}`);
     if (!item) return BigInt(0);
-    const input = item.querySelector('input[type="text"]');
+    const input = item.querySelector('input[type="text"]:not(.field-name-input)');
     const match = input.value.trim().match(/^(\d+)\s*:\s*(\d+)$/);
     if (!match) return BigInt(0);
     const high = parseInt(match[1]);
@@ -385,12 +386,189 @@ function updateFieldShiftResult(id, direction) {
 
 function updateAllFields() {
     document.querySelectorAll('.field-item').forEach(item => {
-        const input = item.querySelector('input[type="text"]');
+        const input = item.querySelector('input[type="text"]:not(.field-name-input)');
         if (input && input.value.trim()) {
             const id = parseInt(item.id.replace('field-', ''));
             onFieldInput(id);
         }
     });
+}
+
+// ===== 导出/导入功能 =====
+function collectAllData() {
+    const fields = [];
+    document.querySelectorAll('.field-item').forEach(item => {
+        const id = parseInt(item.id.replace('field-', ''));
+        const nameInput = item.querySelector('.field-name-input');
+        const rangeInput = item.querySelector('input[type="text"]:not(.field-name-input)');
+        const shiftBits = document.getElementById(`fieldShiftBits-${id}`);
+        const shiftMode = document.getElementById(`fieldShiftMode-${id}`);
+        
+        fields.push({
+            name: nameInput ? nameInput.value : '',
+            range: rangeInput ? rangeInput.value : '',
+            shiftBits: shiftBits ? shiftBits.value : '1',
+            shiftMode: shiftMode ? shiftMode.value : 'logical'
+        });
+    });
+    
+    return {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        currentValue: currentValue.toString(),
+        mainShift: {
+            bits: document.getElementById('mainShiftBits').value,
+            mode: document.querySelector('input[name="mainShiftMode"]:checked').value
+        },
+        fields: fields,
+        history: historyEntries
+    };
+}
+
+function exportJSON() {
+    const data = collectAllData();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chip_calc_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showExportMsg('JSON 导出成功', 'success');
+}
+
+function exportText() {
+    const data = collectAllData();
+    let text = '=== 数字芯片设计前端计算器 - 数据报告 ===\n';
+    text += `导出时间: ${new Date(data.timestamp).toLocaleString('zh-CN')}\n\n`;
+    
+    text += '【64位主数值】\n';
+    const val = BigInt(data.currentValue);
+    text += `  HEX: 0x${val.toString(16).toUpperCase().padStart(16, '0')}\n`;
+    text += `  DEC: ${val.toString(10)}\n`;
+    text += `  BIN: ${formatBigInt64(val)}\n\n`;
+    
+    text += '【主移位设置】\n';
+    text += `  位数: ${data.mainShift.bits}\n`;
+    text += `  模式: ${data.mainShift.mode}\n\n`;
+    
+    if (data.fields.length > 0) {
+        text += '【域段提取】\n';
+        data.fields.forEach((f, i) => {
+            const name = f.name || `(未命名#${i + 1})`;
+            text += `\n  ${i + 1}. ${name}\n`;
+            text += `     范围: ${f.range || '-'}\n`;
+            if (f.range) {
+                const match = f.range.match(/^(\d+)\s*:\s*(\d+)$/);
+                if (match) {
+                    const high = parseInt(match[1]);
+                    const low = parseInt(match[2]);
+                    const width = high - low + 1;
+                    const mask = (BigInt(1) << BigInt(width)) - BigInt(1);
+                    const fieldVal = (val >> BigInt(low)) & mask;
+                    text += `     HEX: 0x${fieldVal.toString(16).toUpperCase().padStart(Math.ceil(width / 4), '0')}\n`;
+                    text += `     DEC: ${fieldVal.toString(10)}\n`;
+                    text += `     BIN: ${formatBigIntN(fieldVal, width)}\n`;
+                    text += `     移位: ${f.shiftBits}位 (${f.shiftMode})\n`;
+                }
+            }
+        });
+        text += '\n';
+    }
+    
+    if (data.history.length > 0) {
+        text += '【计算历史】\n';
+        data.history.forEach(h => {
+            text += `  ${h.expr} = ${h.result}\n`;
+        });
+    }
+    
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chip_calc_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showExportMsg('文本报告导出成功', 'success');
+}
+
+function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if (data.version !== '1.0') {
+                throw new Error('不支持的文件版本');
+            }
+            
+            // 恢复主数值
+            currentValue = BigInt(data.currentValue) & MASK64;
+            
+            // 恢复主移位设置
+            document.getElementById('mainShiftBits').value = data.mainShift.bits;
+            const modeRadio = document.querySelector(`input[name="mainShiftMode"][value="${data.mainShift.mode}"]`);
+            if (modeRadio) modeRadio.checked = true;
+            
+            // 清空现有域段
+            document.getElementById('fieldList').innerHTML = '';
+            fieldIdCounter = 0;
+            
+            // 恢复域段
+            data.fields.forEach(f => {
+                addField();
+                const id = fieldIdCounter - 1;
+                const item = document.getElementById(`field-${id}`);
+                const nameInput = item.querySelector('.field-name-input');
+                const rangeInput = item.querySelector('input[type="text"]:not(.field-name-input)');
+                const shiftBits = document.getElementById(`fieldShiftBits-${id}`);
+                const shiftMode = document.getElementById(`fieldShiftMode-${id}`);
+                
+                if (nameInput) nameInput.value = f.name || '';
+                if (rangeInput) rangeInput.value = f.range || '';
+                if (shiftBits) shiftBits.value = f.shiftBits || '1';
+                if (shiftMode) shiftMode.value = f.shiftMode || 'logical';
+                
+                if (f.range) onFieldInput(id);
+                if (f.shiftBits && parseInt(f.shiftBits) > 0) updateFieldShiftResult(id);
+            });
+            
+            // 恢复历史
+            historyEntries = data.history || [];
+            renderHistory();
+            
+            updateAllDisplays();
+            showExportMsg('导入成功', 'success');
+        } catch (err) {
+            showExportMsg('导入失败: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function copyToClipboard() {
+    const data = collectAllData();
+    const json = JSON.stringify(data, null, 2);
+    navigator.clipboard.writeText(json).then(() => {
+        showExportMsg('已复制到剪贴板', 'success');
+    }).catch(err => {
+        showExportMsg('复制失败: ' + err.message, 'error');
+    });
+}
+
+function showExportMsg(msg, type) {
+    const el = document.getElementById('exportMsg');
+    el.textContent = msg;
+    el.className = 'export-msg ' + type;
+    setTimeout(() => {
+        el.className = 'export-msg';
+    }, 3000);
 }
 
 // ===== 混合进制表达式计算器（支持按位运算）=====
