@@ -118,6 +118,96 @@
             </div>
             <div class="calc-history" id="calcHistory"></div>
         </div>
+
+        <!-- 使用说明 -->
+        <div class="section manual-section">
+            <h2>📖 使用说明</h2>
+            <div class="manual-content">
+                <div class="manual-block">
+                    <h3>一、64位二进制数转换器</h3>
+                    <p>用于查看和编辑一个 64bit 无符号整数的各种表示形式，适用于寄存器值的调试与分析。</p>
+                    <ul>
+                        <li><strong>二进制位显示：</strong>64 位按 4 行 × 16 列排列，每 4bit 一组。点击任意 bit 可翻转该位（0↔1），三种进制表示自动同步更新。</li>
+                        <li><strong>数值表示：</strong>十六进制、十进制、二进制三种格式，均可手动输入修改。输入后自动同步到其他两种格式及 bit 显示。
+                            <ul>
+                                <li>十六进制：支持 <code>0x</code> 前缀或纯数字</li>
+                                <li>十进制：支持负数（自动转为 64 位补码）</li>
+                                <li>二进制：支持空格分隔，如 <code>1010 0011 ...</code></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="manual-block">
+                    <h3>二、移位运算</h3>
+                    <p>对当前 64 位数值进行移位操作，<strong>仅输出结果，不修改原值</strong>。</p>
+                    <ul>
+                        <li><strong>逻辑移位：</strong>空位补 0</li>
+                        <li><strong>算术移位：</strong>右移时高位补符号位（bit63），左移同逻辑移位</li>
+                        <li><strong>循环移位：</strong>移出的位从另一端补回</li>
+                        <li>输入移位位数后，自动预览左移/右移结果（HEX/DEC/BIN 三种格式）</li>
+                        <li>点击方向按钮锁定显示该方向的结果，点击「↺ 重置」清除</li>
+                    </ul>
+                </div>
+
+                <div class="manual-block">
+                    <h3>三、域段提取</h3>
+                    <p>从 64 位数值中提取指定位段，支持同时存在多个域段。</p>
+                    <ul>
+                        <li><strong>添加域段：</strong>点击「+ 添加域段」新增，点击「删除」移除</li>
+                        <li><strong>命名：</strong>每个域段可输入自定义名称（如 <code>opcode</code>、<code>addr</code>）</li>
+                        <li><strong>范围输入：</strong>格式为 <code>高位:低位</code>，如 <code>20:16</code> 表示提取 bit20 到 bit16</li>
+                        <li><strong>域段移位：</strong>对提取出的域段值进行移位（逻辑/算术/循环），同样仅输出结果</li>
+                        <li><strong>重置：</strong>点击「↺ 重置」清除移位结果并恢复默认位数</li>
+                    </ul>
+                </div>
+
+                <div class="manual-block">
+                    <h3>四、数据导出 / 导入</h3>
+                    <p>保存和恢复当前工作状态，方便分享和归档。</p>
+                    <ul>
+                        <li><strong>导出 JSON：</strong>完整保存主数值、移位设置、所有域段（含名称）、计算历史，可重新导入恢复</li>
+                        <li><strong>导出文本报告：</strong>生成可读的纯文本格式，适合粘贴到文档或邮件中</li>
+                        <li><strong>导入 JSON：</strong>从 JSON 文件恢复所有状态</li>
+                        <li><strong>复制到剪贴板：</strong>将 JSON 数据复制到剪贴板，便于快速分享</li>
+                    </ul>
+                </div>
+
+                <div class="manual-block">
+                    <h3>五、混合进制计算器</h3>
+                    <p>支持任意进制混合运算的表达式计算器。</p>
+                    <ul>
+                        <li><strong>进制前缀：</strong>
+                            <code>0x</code> 十六进制、<code>0b</code> 二进制、<code>0d</code> 十进制、无前缀默认十进制
+                        </li>
+                        <li><strong>算术运算：</strong><code>+ - * / %</code>，支持括号改变优先级</li>
+                        <li><strong>移位运算：</strong><code>&lt;&lt;</code> 左移、<code>&gt;&gt;</code> 右移</li>
+                        <li><strong>按位运算：</strong>
+                            <ul>
+                                <li><code>&amp;</code> — AND（按位与）</li>
+                                <li><code>|</code> — OR（按位或）</li>
+                                <li><code>^</code> — XOR（按位异或）</li>
+                                <li><code>~</code> — NOT（按位取反，64 位）</li>
+                            </ul>
+                        </li>
+                        <li><strong>运算符优先级：</strong>（从高到低）<code>~</code> → <code>* / %</code> → <code>+ -</code> → <code>&lt;&lt; &gt;&gt;</code> → <code>&amp;</code> → <code>^</code> → <code>|</code></li>
+                        <li><strong>示例：</strong>
+                            <ul>
+                                <li><code>0xFF &amp; 0b1010</code> → 按位与</li>
+                                <li><code>(0x100 - 1) &gt;&gt; 4</code> → 先减后右移</li>
+                                <li><code>~0x0F | 0b1010</code> → 取反后按位或</li>
+                            </ul>
+                        </li>
+                        <li>结果同时显示二进制、十进制、十六进制三种格式，保留最近 10 条计算历史</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Digital Chip Design Frontend Calculator &nbsp;|&nbsp; 
+            <a href="https://github.com/Celestial-42/chip_de_calculator" target="_blank">GitHub</a></p>
+        </div>
     </div>
 
     <script src="script.js"></script>
