@@ -162,7 +162,14 @@ h3 .hint { color: #666; font-weight: 400; font-size: 0.85em; }
 /* ===== 转换器布局（两栏） ===== */
 .converter-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+}
+
+/* --- 左栏：垂直堆叠 --- */
+.left-column {
+    display: flex;
+    flex-direction: column;
     gap: 16px;
 }
 
@@ -235,13 +242,7 @@ h3 .hint { color: #666; font-weight: 400; font-size: 0.85em; }
     transform: none;
 }
 
-/* --- 中: 数值表示 + 移位 --- */
-.center-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
+/* --- 数值表示 --- */
 .representation-section {
     background: #1a1b2e;
     padding: 16px;
