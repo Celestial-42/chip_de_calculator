@@ -39,14 +39,12 @@ function initBitDisplay() {
     const container = document.getElementById('bitRows');
     container.innerHTML = '';
     
-    // 总行数：每行16bit，向上取整
     const totalRows = Math.ceil(currentBits / 16);
     
     for (let row = 0; row < totalRows; row++) {
         const rowEl = document.createElement('div');
         rowEl.className = 'bit-row';
         
-        // 这一行的最高位和最低位
         const rowHighBit = currentBits - 1 - row * 16;
         const rowLowBit = Math.max(0, currentBits - (row + 1) * 16);
         
@@ -58,17 +56,14 @@ function initBitDisplay() {
         const bitsEl = document.createElement('div');
         bitsEl.className = 'bit-row-bits';
         
-        // 每行固定4组，每组4bit，共16bit
         for (let g = 0; g < 4; g++) {
             const groupEl = document.createElement('div');
             groupEl.className = 'bit-group-4';
             
-            // 每组4个bit，从高位到低位
             for (let i = 3; i >= 0; i--) {
                 const bitIndex = currentBits - 1 - row * 16 - g * 4 - (3 - i);
                 
                 if (bitIndex >= 0 && bitIndex < currentBits) {
-                    // 有效的bit位
                     const bitEl = document.createElement('div');
                     bitEl.className = 'bit';
                     bitEl.textContent = '0';
@@ -77,7 +72,6 @@ function initBitDisplay() {
                     bitEl.addEventListener('click', () => toggleBit(bitIndex));
                     groupEl.appendChild(bitEl);
                 } else {
-                    // 占位符，保持对齐
                     const placeholder = document.createElement('div');
                     placeholder.className = 'bit placeholder';
                     placeholder.textContent = '';
@@ -148,13 +142,22 @@ document.getElementById('binInput').addEventListener('change', function() {
         let v = this.value.trim().replace(/\s/g, '');
         if (!v) v = '0';
         if (!/^[01]+$/.test(v)) { alert('无效的二进制数'); updateRepresentations(); return; }
-        if (v.length > currentBits) v = v.slice(-currentBits);
+        
+        // 补齐到 currentBits 位（如果不足则在左侧补0）
+        if (v.length < currentBits) {
+            v = v.padStart(currentBits, '0');
+        } else if (v.length > currentBits) {
+            // 如果超过位宽，截断高位
+            v = v.slice(-currentBits);
+        }
+        
+        // 现在 v 的长度等于 currentBits，从左到右是高位到低位
         currentValue = BigInt('0b' + v) & currentMask;
         updateAllDisplays();
     } catch(e) { alert('错误: ' + e.message); updateRepresentations(); }
 });
 
-// ===== 移位功能（只输出结果，不修改原值）=====
+// ===== 移位功能 =====
 function doShift(val, bits, mode, direction, width) {
     bits = Math.max(0, Math.min(width, bits));
     if (bits === 0) return val & currentMask;
@@ -561,28 +564,22 @@ function importJSON(event) {
                 throw new Error('不支持的文件版本');
             }
             
-            // 恢复位宽
             currentBits = data.bitWidth || 64;
             updateMask();
             document.getElementById('bitWidthInput').value = currentBits;
             document.getElementById('sectionTitle').textContent = `${currentBits}位二进制数转换器`;
             
-            // 恢复主数值
             currentValue = BigInt(data.currentValue) & currentMask;
             
-            // 恢复主移位设置
             document.getElementById('mainShiftBits').value = data.mainShift.bits;
             const modeRadio = document.querySelector(`input[name="mainShiftMode"][value="${data.mainShift.mode}"]`);
             if (modeRadio) modeRadio.checked = true;
             
-            // 清空现有域段
             document.getElementById('fieldList').innerHTML = '';
             fieldIdCounter = 0;
             
-            // 重新初始化位显示
             initBitDisplay();
             
-            // 恢复域段
             data.fields.forEach(f => {
                 addField();
                 const id = fieldIdCounter - 1;
@@ -601,7 +598,6 @@ function importJSON(event) {
                 if (f.shiftBits && parseInt(f.shiftBits) > 0) updateFieldShiftResult(id);
             });
             
-            // 恢复历史
             historyEntries = data.history || [];
             renderHistory();
             
@@ -634,7 +630,7 @@ function showExportMsg(msg, type) {
     }, 3000);
 }
 
-// ===== 混合进制表达式计算器（支持按位运算）=====
+// ===== 混合进制表达式计算器 =====
 function tokenize(expr) {
     const tokens = [];
     let i = 0;
