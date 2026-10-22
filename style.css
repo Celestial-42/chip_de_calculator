@@ -780,3 +780,44 @@ h3 .hint { color: #666; font-weight: 400; font-size: 0.85em; }
     .result-grid, .field-result-row, .field-shift-result { grid-template-columns: 1fr; }
     .calc-input-row { flex-wrap: wrap; }
 }
+
+/* ===== Tooltip 悬停提示 ===== */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1b2e;
+    color: #e0e0e0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    font-weight: 400;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    border: 1px solid #4a5af5;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    pointer-events: none;
+    margin-bottom: 6px;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* bit 位的 tooltip 特殊处理：显示在下方 */
+.bit[data-tooltip]::after {
+    bottom: auto;
+    top: 100%;
+    margin-bottom: 0;
+    margin-top: 6px;
+}

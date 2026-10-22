@@ -68,7 +68,7 @@ function initBitDisplay() {
                     bitEl.className = 'bit';
                     bitEl.textContent = '0';
                     bitEl.dataset.bit = bitIndex;
-                    bitEl.title = `Bit ${bitIndex}`;
+                    bitEl.setAttribute("data-tooltip", `Bit ${bitIndex}`);
                     bitEl.addEventListener('click', () => toggleBit(bitIndex));
                     groupEl.appendChild(bitEl);
                 } else {
