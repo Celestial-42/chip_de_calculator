@@ -19,21 +19,17 @@ function applyBitWidth() {
         return;
     }
     
-    // 截断当前值到新位宽
     const newMask = (BigInt(1) << BigInt(newBits)) - BigInt(1);
     currentValue = currentValue & newMask;
     currentBits = newBits;
     updateMask();
     
-    // 更新标题
     document.getElementById('sectionTitle').textContent = `${currentBits}位二进制数转换器`;
     
-    // 重新初始化位显示
     initBitDisplay();
     updateAllDisplays();
 }
 
-// 回车键应用位宽
 document.getElementById('bitWidthInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') applyBitWidth();
 });
@@ -43,36 +39,36 @@ function initBitDisplay() {
     const container = document.getElementById('bitRows');
     container.innerHTML = '';
     
-    // 计算需要多少行，每行16bit
-    const totalGroups = Math.ceil(currentBits / 4);
-    const totalRows = Math.ceil(totalGroups / 4);
+    // 总行数：每行16bit，向上取整
+    const totalRows = Math.ceil(currentBits / 16);
     
     for (let row = 0; row < totalRows; row++) {
         const rowEl = document.createElement('div');
         rowEl.className = 'bit-row';
         
-        // 计算这一行的位范围标签
-        const highBit = currentBits - 1 - row * 16;
-        const lowBit = Math.max(0, currentBits - (row + 1) * 16);
+        // 这一行的最高位和最低位
+        const rowHighBit = currentBits - 1 - row * 16;
+        const rowLowBit = Math.max(0, currentBits - (row + 1) * 16);
         
         const labelEl = document.createElement('span');
         labelEl.className = 'bit-row-label';
-        labelEl.textContent = `${highBit}:${lowBit}`;
+        labelEl.textContent = `${rowHighBit}:${rowLowBit}`;
         rowEl.appendChild(labelEl);
         
         const bitsEl = document.createElement('div');
         bitsEl.className = 'bit-row-bits';
         
-        // 每行最多4组，每组4bit
-        const groupsInRow = Math.min(4, totalGroups - row * 4);
-        for (let g = 0; g < groupsInRow; g++) {
+        // 每行固定4组，每组4bit，共16bit
+        for (let g = 0; g < 4; g++) {
             const groupEl = document.createElement('div');
             groupEl.className = 'bit-group-4';
             
             // 每组4个bit，从高位到低位
             for (let i = 3; i >= 0; i--) {
-                const bitIndex = currentBits - 1 - row * 16 - g * 4 - i;
+                const bitIndex = currentBits - 1 - row * 16 - g * 4 - (3 - i);
+                
                 if (bitIndex >= 0 && bitIndex < currentBits) {
+                    // 有效的bit位
                     const bitEl = document.createElement('div');
                     bitEl.className = 'bit';
                     bitEl.textContent = '0';
@@ -80,6 +76,12 @@ function initBitDisplay() {
                     bitEl.title = `Bit ${bitIndex}`;
                     bitEl.addEventListener('click', () => toggleBit(bitIndex));
                     groupEl.appendChild(bitEl);
+                } else {
+                    // 占位符，保持对齐
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'bit placeholder';
+                    placeholder.textContent = '';
+                    groupEl.appendChild(placeholder);
                 }
             }
             bitsEl.appendChild(groupEl);
@@ -103,7 +105,7 @@ function updateAllDisplays() {
 }
 
 function updateBitDisplay() {
-    document.querySelectorAll('.bit').forEach(el => {
+    document.querySelectorAll('.bit:not(.placeholder)').forEach(el => {
         const idx = parseInt(el.dataset.bit);
         const val = (currentValue >> BigInt(idx)) & BigInt(1);
         el.textContent = val.toString();

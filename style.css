@@ -519,3 +519,17 @@ h3 .hint { color: #666; font-weight: 400; font-size: 0.85em; }
     color: #555;
     font-size: 0.78em;
 }
+
+/* ===== 占位符 bit（超出位宽的位置）===== */
+.bit.placeholder {
+    background: transparent;
+    border: 1.5px dashed #2d2f4a;
+    cursor: default;
+    color: transparent;
+}
+
+.bit.placeholder:hover {
+    background: transparent;
+    border-color: #2d2f4a;
+    transform: none;
+}
