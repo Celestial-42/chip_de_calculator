@@ -11,7 +11,15 @@
         <h1>🔧 数字芯片设计前端计算器</h1>
 
         <div class="section">
-            <h2>64位二进制数转换器</h2>
+            <div class="section-header">
+                <h2 id="sectionTitle">64位二进制数转换器</h2>
+                <div class="bitwidth-config">
+                    <label>位宽:</label>
+                    <input type="number" id="bitWidthInput" value="64" min="1" max="256">
+                    <button onclick="applyBitWidth()">应用</button>
+                    <span class="hint">(1~256)</span>
+                </div>
+            </div>
             <div class="converter-layout">
                 <!-- 左: 二进制显示 + 移位 -->
                 <div class="left-section">
@@ -23,7 +31,7 @@
                         <h3>移位运算 <span class="hint">(仅输出结果)</span></h3>
                         <div class="shift-row">
                             <label>位数:</label>
-                            <input type="number" id="mainShiftBits" value="1" min="0" max="64">
+                            <input type="number" id="mainShiftBits" value="1" min="0" max="256">
                         </div>
                         <div class="shift-modes">
                             <label class="shift-mode-label">
