@@ -56,19 +56,28 @@ function initBitDisplay() {
         const bitsEl = document.createElement('div');
         bitsEl.className = 'bit-row-bits';
         
+        const bitsInRow = rowHighBit - rowLowBit + 1;
+        const isFirstGroupPartial = bitsInRow % 4 !== 0;
+        const firstGroupBits = isFirstGroupPartial ? bitsInRow % 4 : 4;
+        
+        let bitOffset = 0;
+        
         for (let g = 0; g < 4; g++) {
             const groupEl = document.createElement('div');
             groupEl.className = 'bit-group-4';
             
-            for (let i = 3; i >= 0; i--) {
-                const bitIndex = currentBits - 1 - row * 16 - g * 4 - (3 - i);
-                
-                if (bitIndex >= 0 && bitIndex < currentBits) {
+            const groupBits = (g === 0 && isFirstGroupPartial) ? firstGroupBits : 4;
+            
+            for (let i = 0; i < 4; i++) {
+                if (i < groupBits) {
+                    const bitIndex = rowHighBit - bitOffset;
+                    bitOffset++;
+                    
                     const bitEl = document.createElement('div');
                     bitEl.className = 'bit';
                     bitEl.textContent = '0';
                     bitEl.dataset.bit = bitIndex;
-                    bitEl.setAttribute("data-tooltip", `Bit ${bitIndex}`);
+                    bitEl.setAttribute('data-tooltip', `Bit ${bitIndex}`);
                     bitEl.addEventListener('click', () => toggleBit(bitIndex));
                     groupEl.appendChild(bitEl);
                 } else {
@@ -143,15 +152,12 @@ document.getElementById('binInput').addEventListener('change', function() {
         if (!v) v = '0';
         if (!/^[01]+$/.test(v)) { alert('无效的二进制数'); updateRepresentations(); return; }
         
-        // 补齐到 currentBits 位（如果不足则在左侧补0）
         if (v.length < currentBits) {
             v = v.padStart(currentBits, '0');
         } else if (v.length > currentBits) {
-            // 如果超过位宽，截断高位
             v = v.slice(-currentBits);
         }
         
-        // 现在 v 的长度等于 currentBits，从左到右是高位到低位
         currentValue = BigInt('0b' + v) & currentMask;
         updateAllDisplays();
     } catch(e) { alert('错误: ' + e.message); updateRepresentations(); }
