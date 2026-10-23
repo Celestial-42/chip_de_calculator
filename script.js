@@ -39,18 +39,31 @@ function initBitDisplay() {
     const container = document.getElementById('bitRows');
     container.innerHTML = '';
     
-    // 计算需要多少组（每组4位）
-    const totalGroups = Math.ceil(currentBits / 4);
-    // 计算需要多少行（每行4组 = 16位）
-    const totalRows = Math.ceil(totalGroups / 4);
+    // 从最低位开始，每4位一组进行分组
+    const groups = [];
+    let bitPos = 0;
+    while (bitPos < currentBits) {
+        const groupHigh = Math.min(bitPos + 3, currentBits - 1);
+        const groupLow = bitPos;
+        groups.push({ high: groupHigh, low: groupLow, size: groupHigh - groupLow + 1 });
+        bitPos += 4;
+    }
+    
+    // 反转分组，使最高位组在前
+    groups.reverse();
+    
+    // 每行4组（16位）
+    const totalRows = Math.ceil(groups.length / 4);
     
     for (let row = 0; row < totalRows; row++) {
         const rowEl = document.createElement('div');
         rowEl.className = 'bit-row';
         
-        // 这一行的最高位和最低位
-        const rowHighBit = currentBits - 1 - row * 16;
-        const rowLowBit = Math.max(0, currentBits - (row + 1) * 16);
+        // 这一行的行标签
+        const rowStartGroup = row * 4;
+        const rowHighBit = groups[rowStartGroup].high;
+        const rowEndGroup = Math.min(rowStartGroup + 3, groups.length - 1);
+        const rowLowBit = groups[rowEndGroup].low;
         
         const labelEl = document.createElement('span');
         labelEl.className = 'bit-row-label';
@@ -60,48 +73,29 @@ function initBitDisplay() {
         const bitsEl = document.createElement('div');
         bitsEl.className = 'bit-row-bits';
         
-        // 这一行有多少组（最多4组）
-        const groupsInThisRow = Math.min(4, totalGroups - row * 4);
-        
-        // 这一行的第一组可能不足4位（如果是最高位行且位宽不是4的倍数）
-        const firstGroupInRow = row * 4;
-        const bitsBeforeThisRow = row * 16;
-        const bitsInFirstGroup = Math.min(4, currentBits - bitsBeforeThisRow);
-        
-        let currentBit = rowHighBit;
-        
+        // 每行最多4组
         for (let g = 0; g < 4; g++) {
             const groupEl = document.createElement('div');
             groupEl.className = 'bit-group-4';
             
-            if (g < groupsInThisRow) {
-                // 这一组有多少位
-                let groupSize;
-                if (g === 0 && bitsInFirstGroup < 4) {
-                    groupSize = bitsInFirstGroup;
-                } else {
-                    groupSize = 4;
+            const groupIndex = rowStartGroup + g;
+            
+            if (groupIndex < groups.length) {
+                const group = groups[groupIndex];
+                
+                // 添加有效位（从高位到低位）
+                for (let bit = group.high; bit >= group.low; bit--) {
+                    const bitEl = document.createElement('div');
+                    bitEl.className = 'bit';
+                    bitEl.textContent = '0';
+                    bitEl.dataset.bit = bit;
+                    bitEl.setAttribute('data-tooltip', `Bit ${bit}`);
+                    bitEl.addEventListener('click', () => toggleBit(bit));
+                    groupEl.appendChild(bitEl);
                 }
                 
-                // 确保不超过实际位宽
-                groupSize = Math.min(groupSize, currentBit + 1);
-                
-                // 添加有效位
-                for (let i = 0; i < groupSize; i++) {
-                    if (currentBit >= 0) {
-                        const bitEl = document.createElement('div');
-                        bitEl.className = 'bit';
-                        bitEl.textContent = '0';
-                        bitEl.dataset.bit = currentBit;
-                        bitEl.setAttribute('data-tooltip', `Bit ${currentBit}`);
-                        bitEl.addEventListener('click', () => toggleBit(currentBit));
-                        groupEl.appendChild(bitEl);
-                        currentBit--;
-                    }
-                }
-                
-                // 填充占位符
-                for (let i = groupSize; i < 4; i++) {
+                // 如果这一组不足4位，添加占位符
+                for (let i = group.size; i < 4; i++) {
                     const placeholder = document.createElement('div');
                     placeholder.className = 'bit placeholder';
                     placeholder.textContent = '';
