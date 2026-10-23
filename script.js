@@ -83,6 +83,16 @@ function initBitDisplay() {
             if (groupIndex < groups.length) {
                 const group = groups[groupIndex];
                 
+                // 如果这一组不足4位，先添加占位符（左侧对齐）
+                if (group.size < 4) {
+                    for (let i = 0; i < 4 - group.size; i++) {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'bit placeholder';
+                        placeholder.textContent = '';
+                        groupEl.appendChild(placeholder);
+                    }
+                }
+                
                 // 添加有效位（从高位到低位）
                 for (let bit = group.high; bit >= group.low; bit--) {
                     const bitEl = document.createElement('div');
@@ -92,14 +102,6 @@ function initBitDisplay() {
                     bitEl.setAttribute('data-tooltip', `Bit ${bit}`);
                     bitEl.addEventListener('click', () => toggleBit(bit));
                     groupEl.appendChild(bitEl);
-                }
-                
-                // 如果这一组不足4位，添加占位符
-                for (let i = group.size; i < 4; i++) {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'bit placeholder';
-                    placeholder.textContent = '';
-                    groupEl.appendChild(placeholder);
                 }
             } else {
                 // 这一行没有这一组，全部填充占位符
